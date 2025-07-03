@@ -13,7 +13,7 @@ Provision EC2 instances to deploy a sample e-commerce web application, configure
 
 ### 📸 Screenshot:
 `screenshots/security_group.png`
-
+![Image](https://github.com/user-attachments/assets/45cb636d-0b6e-47bf-9b85-4a5cdffa79f1)
 ---
 
 ## 2️⃣ EC2 Instance Launch & Setup
