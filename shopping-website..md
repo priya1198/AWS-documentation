@@ -1,226 +1,141 @@
-# 🧪 AWS Project: Deploy & Scale E-Commerce App (Using Default VPC Only)
+# 🧪 AWS E-Commerce Project Documentation
 
 ## 🎯 Objective
-Deploy a Node.js-based e-commerce web application using EC2, Load Balancer, Auto Scaling Group, CloudWatch monitoring, and SNS alerts — all using AWS **Default VPC** (no custom VPC creation required).
+Provision EC2 instances to deploy a sample e-commerce web application, configure it behind a Load Balancer, set up Auto Scaling based on traffic, monitor the infrastructure using CloudWatch, and send alerts using SNS.
 
 ---
 
-## ✅ 1️⃣ Provision EC2 Infrastructure (in Default VPC)
+## 1️⃣ Security Group Configuration
 
-### 📌 Step 1: Use Default VPC and Public Subnets
-No action required — AWS provides:
-- 1 subnet per Availability Zone
-- Automatically assignable public IPs
-- Internet Gateway attached
+### ✅ Configured Inbound Rules:
+- **Port 22 (SSH)** – for remote access  
+- **Port 80 (HTTP)** – for web traffic
 
-### 📌 Step 2: Create a Security Group
-**Go to**: EC2 > Security Groups > Create Security Group  
-- **Name**: `ecomm-sg`  
-- **Inbound Rules**:
-  - SSH (port 22) → Your IP
-  - HTTP (port 80) → 0.0.0.0/0  
-- **Outbound Rule**: Default (allow all)
-
-### 📌 Step 3: Create IAM Role
-**Go to**: IAM > Roles > Create Role  
-- **Trusted Entity**: EC2  
-- **Attach Policies**:
-  - `AmazonEC2RoleforSSM`
-  - `CloudWatchAgentServerPolicy`
-  - `AmazonSNSFullAccess`  
-- **Role Name**: `EcommEC2Role`
-
-### 📌 Step 4: Launch Two EC2 Instances
-**Go to**: EC2 > Launch Instance  
-- AMI: Amazon Linux 2 or Ubuntu  
-- Instance Type: `t2.micro`  
-- Network: **Default VPC**  
-- Subnet: Choose two different AZs (e.g., `us-east-1a`, `us-east-1b`)  
-- Auto-assign Public IP: **Enabled**  
-- IAM Role: `EcommEC2Role`  
-- Security Group: `ecomm-sg`
-
-> ⚠️ Launch two instances manually or automate later via Launch Template.
-
-### 📌 Step 5: Install Node.js App
-SSH into each EC2 instance and run:
-
-```bash
-# Update & install dependencies
-sudo yum update -y
-curl -sL https://rpm.nodesource.com/setup_18.x | sudo bash -
-sudo yum install -y nodejs git
-```
-# Clone sample Node.js app
-```
-git clone https://github.com/heroku/node-js-sample.git
-cd node-js-sample
-npm install
-PORT=80 sudo node index.js &
-```
----
-## ✅ 2️⃣ Deploy the E-Commerce App
-
-- Repeat the setup on **both EC2 instances** as done in Step 1.
-- Ensure that the app is listening on **port 80**.
-- You can verify by accessing the instance's public IP or using `curl http://localhost`.
+### 📸 Screenshot:
+`screenshots/security_group.png`
 
 ---
 
-## ✅ 3️⃣ Configure Application Load Balancer (ALB)
+## 2️⃣ EC2 Instance Launch & Setup
 
-### 📌 Step 1: Create Target Group
-
-**Navigate to**: EC2 > Target Groups > Create Target Group  
-- **Type**: Instance  
-- **Protocol**: HTTP  
-- **Port**: 80  
-- **VPC**: Default VPC  
-- **Health Check Path**: `/`  
-- **Name**: `ecomm-tg`
-
-➡️ Add both EC2 instances as targets after creation.
-
----
-
-### 📌 Step 2: Create ALB
-
-**Navigate to**: EC2 > Load Balancers > Create Load Balancer  
-- **Type**: Application Load Balancer  
-- **Name**: `ecomm-alb`  
-- **Scheme**: Internet-facing  
-- **Network**: Default VPC  
-- **Subnets**: Choose 2 different public subnets  
-- **Security Group**: Must allow HTTP (port 80)
-
-**Listener Rule**:
-- Forward HTTP traffic on port 80 to target group `ecomm-tg`
-
-🔍 **Test**: Copy the ALB **DNS name** and open it in your browser — your app should load.
-
----
-
-## ✅ 4️⃣ Set Up Auto Scaling
-
-### 📌 Step 1: Create Launch Template
-
-**Navigate to**: EC2 > Launch Templates > Create  
-- **Name**: `ecomm-launch-template`  
-- **AMI**: Amazon Linux 2 or Ubuntu  
+### ✅ Launch Configuration:
+- **OS**: Amazon Linux 2 / Ubuntu  
+- **Public Subnet** with Auto-assign Public IP enabled  
+- **IAM Role**: Attached with `AmazonEC2RoleforSSM` and `AmazonSNSFullAccess`  
 - **Instance Type**: `t2.micro`  
-- **IAM Role**: `EcommEC2Role`  
-- **Security Group**: `ecomm-sg`  
-- **User Data**: Add the following startup script:
+- **Key Pair**: Used for SSH access  
 
+### ✅ Software Setup:
+SSH into EC2 using key and run:
+```bash
+sudo yum update -y
+sudo yum install -y httpd
+sudo systemctl start httpd
+sudo systemctl enable httpd
+echo "<h1>Welcome to E-Commerce App</h1>" | sudo tee /var/www/html/index.html
+```
+📸 **Screenshot:**  
+![Image](https://github.com/user-attachments/assets/4ad11a8f-7533-44d6-8101-685571132338)
+---
+
+## 3️⃣ Deploy the E-Commerce App
+
+### ✅ Deployment:
+- The application is served on **Port 80**
+- A simple HTML-based landing page confirms successful deployment
+
+📸 **Screenshot:**  
+`screenshots/app_running.png`
+![Image](https://github.com/user-attachments/assets/0049b011-a34b-409f-a51a-bc33255915f4)
+![Image](https://github.com/user-attachments/assets/a9bce9ba-d31a-4622-a34f-4418a57a57cb)
+---
+
+## 4️⃣ Application Load Balancer (ALB)
+
+### ✅ ALB Configuration:
+- **Type**: Application Load Balancer  
+- **Scheme**: Internet-facing  
+- **Listeners**: HTTP (Port 80)  
+- **Subnets**: Associated with public subnets  
+- **Target Group**: Includes both EC2 instances  
+- **Health Check Path**: `/`
+
+📸 **Screenshot:**  
+`screenshots/alb_setup.png`
+![Image](https://github.com/user-attachments/assets/66ac2f5e-50ae-4a69-9329-59fbbc426482)
+![Image](https://github.com/user-attachments/assets/27f60f6f-4bea-4638-ac1a-eacc7496b457)
+![Image](https://github.com/user-attachments/assets/42bb81a9-01f4-497e-8831-f1095e4ec67b)
+---
+
+## 5️⃣ Auto Scaling Group
+
+### ✅ Launch Template:
+- Uses same AMI and instance type (`t2.micro`)  
+- **User Data script**:
 ```bash
 #!/bin/bash
 yum update -y
-curl -sL https://rpm.nodesource.com/setup_18.x | bash -
-yum install -y nodejs git
-git clone https://github.com/heroku/node-js-sample.git
-cd node-js-sample
-npm install
-PORT=80 nohup node index.js > app.log 2>&1 &
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>Auto-Scaled E-Commerce App</h1>" > /var/www/html/index.html
 ```
-## 📌 Step 2: Create Auto Scaling Group
+## ✅ Auto Scaling Group Settings:
+![Image](https://github.com/user-attachments/assets/d2ca069a-c901-4892-b461-cf6d6dd78711)
 
-**Navigate to**: EC2 > Auto Scaling > Create Auto Scaling Group
+- **Min Size**: 2  
+- **Desired Capacity**: 2  
+- **Max Size**: 4  
+- **Attached to ALB’s Target Group**
 
-- **Name**: `ecomm-asg`
-- **Launch Template**: Use `ecomm-launch-template`
-- **Network**: Default VPC
-- **Subnets**: Select 2 public subnets
-- **Attach to Target Group**: `ecomm-tg`
+### ✅ Scaling Policy:
+- **Scale Out**: CPU > 70%  
+- **Scale In**: CPU < 30%
 
-### Scaling Configuration:
-- **Minimum capacity**: 2  
-- **Desired capacity**: 2  
-- **Maximum capacity**: 4
-
----
-
-## 📌 Step 3: Configure Scaling Policies
-
-**Policy Based on CPU Utilization**:
-
-- **Scale Out**: When CPU > 70%  
-- **Scale In**: When CPU < 30%
+📸 **Screenshot:**  
+`screenshots/auto_scaling_setup.png`
 
 ---
 
-## ✅ 5️⃣ Enable Monitoring via CloudWatch
+## 6️⃣ CloudWatch Monitoring
+![Image](https://github.com/user-attachments/assets/2d21e905-9a2a-4c0c-bfd9-ff20c6aac855)
+### ✅ Metrics Collected:
+- CPU Utilization  
+- Memory Utilization  
+- Disk Space  
 
-### 📌 Step 1: Install CloudWatch Agent
+### ✅ Alarms Created:
+- **CPU Utilization > 70%**  
+- **Memory Utilization > 80%**  
+- **Instance Status Check Failure**
 
-SSH into **one EC2 instance**, then run the following commands:
-
-```bash
-# Install the agent
-sudo yum install amazon-cloudwatch-agent -y
-
-# Create CloudWatch configuration
-cat <<EOF | sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-{
-  "metrics": {
-    "append_dimensions": {
-      "InstanceId": "\${aws:InstanceId}"
-    },
-    "metrics_collected": {
-      "CPU": {
-        "measurement": ["cpu_usage_idle"],
-        "metrics_collection_interval": 60
-      },
-      "mem": {
-        "measurement": ["mem_used_percent"],
-        "metrics_collection_interval": 60
-      }
-    }
-  }
-}
-EOF
-
-# Start the CloudWatch agent
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
--a fetch-config -m ec2 \
--c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-```
-## 📌 Step 2: Create CloudWatch Alarms
-
-**Navigate to**: CloudWatch > Alarms > Create Alarm
-
-Create the following alarms:
-
-- **HighCPUAlarm**: Trigger when **CPU Utilization > 70%**
-- **HighMemoryAlarm**: Trigger when **Memory Utilization > 80%**
-- **InstanceStatusAlarm**: Trigger on **EC2 Status Check Failure**
-
+📸 **Screenshot:**  
+`screenshots/cloudwatch_alarms.png`
+![Image](https://github.com/user-attachments/assets/68943a9e-f789-4c45-86fc-152c6674ef6e)
 ---
 
-## ✅ 6️⃣ Set Up SNS Notifications
+## 7️⃣ SNS Notifications
 
-### 📌 Step 1: Create SNS Topic
-
-**Navigate to**: SNS > Topics > Create Topic
-
+### ✅ SNS Topic:
 - **Name**: `ecomm-alerts`  
-- **Type**: Standard
+- **Email Subscription**: Created and confirmed
+- ![Image](https://github.com/user-attachments/assets/05e463a7-faed-4c29-9a1b-7a72747ac2ee)
+![Image](https://github.com/user-attachments/assets/4e343624-d8e0-461b-8548-52d74b11e279)
 
+### ✅ Alarm Actions:
+- All CloudWatch alarms are linked to the SNS topic  
+- Test alert triggered to confirm delivery  
+
+📸 **Screenshot:**  
+`screenshots/sns_confirmation.png`
+![Image](https://github.com/user-attachments/assets/c2840a50-fb4d-4a0b-b095-4e43abce76b7)
+![Image](https://github.com/user-attachments/assets/a6ef7990-949d-4475-82b9-9772a777ed61)
 ---
 
-### 📌 Step 2: Subscribe Your Email
+## ✅ Final Testing and Validation
 
-- **Protocol**: Email  
-- **Enter your email address**  
-- **Confirm** the subscription via the confirmation email in your inbox
-
----
-
-### 📌 Step 3: Attach SNS to CloudWatch Alarms
-
-- For each **CloudWatch alarm**, go to **"Add Notification Action"**
-- Choose **SNS Topic**: `ecomm-alerts`
-
----
-
-
+- ✅ EC2 instance connectivity verified via SSH  
+- ✅ App accessible from browser via ALB DNS  
+- ✅ Scaling tested by generating CPU load  
+- ✅ Email notifications received from CloudWatch alarms
 
